@@ -51,7 +51,7 @@ uint16_t ButtonMatrixState = 0;
 uint32_t ButtonMatrixTimeStamp = 0;
 
 int StudentID = 0;
-uint16_t state = 1;
+uint16_t state = 0;
 int CheckStudentID = 0;
 /* USER CODE END PV */
 
@@ -209,7 +209,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7|GPIO_PIN_9, GPIO_PIN_SET);
@@ -226,8 +226,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD2_Pin PA6 */
-  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_6;
+  /*Configure GPIO pins : LD2_Pin PA6 PA8 */
+  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_6|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -281,13 +281,15 @@ void ButtonMatrixUpdate()
 	if(HAL_GetTick() - ButtonMatrixTimeStamp >= 100)
 	{
 		ButtonMatrixTimeStamp = HAL_GetTick();
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 		int i;
 		for(i = 0 ; i<4 ; ++i)
-		{ //0-3
+		{
 			GPIO_PinState PinState = HAL_GPIO_ReadPin(ButtonMatrixPort[i] , ButtonMatrixPin[i]);
 			if(PinState == GPIO_PIN_RESET) // Button Press
 			{
 				ButtonMatrixState |= (uint16_t)0x1 << (i + ButtonMatrixRow * 4);
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 				switch (state)
 				{
 					case 0: // check
@@ -426,7 +428,7 @@ void ButtonMatrixUpdate()
 						if(ButtonMatrixState == (0b1000000000000000) && StudentID == 11) // ok button
 						{
 							StudentID += 1;
-							HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+							HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 						}
 						else
 						{
@@ -442,7 +444,7 @@ void ButtonMatrixUpdate()
 					CheckStudentID = 0;
 					StudentID = 0;
 					state = 0;
-					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 				}
 			}
 			else
