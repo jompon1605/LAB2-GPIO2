@@ -50,8 +50,9 @@ uint16_t ButtonMatrixState = 0;
 //Button TimeStamp
 uint32_t ButtonMatrixTimeStamp = 0;
 
-uint16_t StudentID = 1;
-uint16_t state = 0;
+int StudentID = 0;
+uint16_t state = 1;
+int CheckStudentID = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,6 +61,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
+//scan and update of Button Matrix
 void ButtonMatrixUpdate();
 
 /* USER CODE END PFP */
@@ -207,13 +209,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7|GPIO_PIN_9, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -221,16 +226,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD2_Pin PA6 PA7 PA9 */
-  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_9;
+  /*Configure GPIO pins : LD2_Pin PA6 */
+  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA7 PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -238,18 +250,18 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA10 */
   GPIO_InitStruct.Pin = GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB3 PB4 PB5 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -258,6 +270,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+//port/pin array , 0-3 input , 4-7 output
 GPIO_TypeDef* ButtonMatrixPort[8] = {GPIOA,GPIOB,GPIOB,GPIOB,GPIOA,GPIOC,GPIOB,GPIOA};
 
 uint16_t ButtonMatrixPin[8] = {GPIO_PIN_10,GPIO_PIN_3,GPIO_PIN_5,GPIO_PIN_4,GPIO_PIN_9,GPIO_PIN_7,GPIO_PIN_6,GPIO_PIN_7};
@@ -267,26 +280,18 @@ void ButtonMatrixUpdate()
 {
 	if(HAL_GetTick() - ButtonMatrixTimeStamp >= 100)
 	{
-		state += 1;
 		ButtonMatrixTimeStamp = HAL_GetTick();
 		int i;
 		for(i = 0 ; i<4 ; ++i)
-		{
+		{ //0-3
 			GPIO_PinState PinState = HAL_GPIO_ReadPin(ButtonMatrixPort[i] , ButtonMatrixPin[i]);
 			if(PinState == GPIO_PIN_RESET) // Button Press
 			{
 				ButtonMatrixState |= (uint16_t)0x1 << (i + ButtonMatrixRow * 4);
-				if(ButtonMatrixState == (0b1 << 10^13))
-				{
-					ButtonMatrixState = 0;
-					StudentID = 1;
-					state = 0;
-					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
-				}
 				switch (state)
 				{
 					case 0: // check
-						if(ButtonMatrixState == (0b1 << 10^6) && StudentID == 1) // check & 6
+						if(ButtonMatrixState == (0b1000000) && CheckStudentID == 0) // check & 6
 						{
 							StudentID += 1;
 							state = 1;
@@ -294,11 +299,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
-							StudentID = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 1: // 6
-						if(ButtonMatrixState == (0b1 << 10^9)) // 2
+						if(ButtonMatrixState == (0b1000000000)) // 2
 						{
 							StudentID += 1;
 							state = 2;
@@ -306,10 +311,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 2: // 62
-						if(ButtonMatrixState == (0b1 << 10^10)) // 3
+						if(ButtonMatrixState == (0b10000000000)) // 3
 						{
 							StudentID += 1;
 							state = 3;
@@ -317,10 +323,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 3: // 623
-						if(ButtonMatrixState == (0b1 << 10^4)) // 4
+						if(ButtonMatrixState == (0b10000)) // 4
 						{
 							StudentID += 1;
 							state = 4;
@@ -328,10 +335,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 4: // 6234
-						if(ButtonMatrixState == (0b1 << 10^12)) // 0
+						if(ButtonMatrixState == (0b1000000000000)) // 0
 						{
 							StudentID += 1;
 							state = 5;
@@ -339,10 +347,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 5: // 62340
-						if(ButtonMatrixState == (0b1 << 10^5)) // 5
+						if(ButtonMatrixState == (0b100000)) // 5
 						{
 							StudentID += 1;
 							state = 6;
@@ -350,10 +359,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 6: // 623405
-						if(ButtonMatrixState == (0b1 << 10^12)) // 0
+						if(ButtonMatrixState == (0b1000000000000)) // 0
 						{
 							StudentID += 1;
 							state = 7;
@@ -361,10 +371,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 7: // 6234050
-						if(ButtonMatrixState == (0b1 << 10^12)) // 0
+						if(ButtonMatrixState == (0b1000000000000)) // 0
 						{
 							StudentID += 1;
 							state = 8;
@@ -372,10 +383,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 8: // 62340500
-						if(ButtonMatrixState == (0b1 << 10^12)) // 0
+						if(ButtonMatrixState == (0b1000000000000)) // 0
 						{
 							StudentID += 1;
 							state = 9;
@@ -383,10 +395,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 9: // 623405000
-						if(ButtonMatrixState == (0b1 << 10^6)) // 6
+						if(ButtonMatrixState == (0b1000000)) // 6
 						{
 							StudentID += 1;
 							state = 10;
@@ -394,10 +407,11 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 10: // 6234050006
-						if(ButtonMatrixState == (0b1 << 10^12)) // 0
+						if(ButtonMatrixState == (0b1000000000000)) // 0
 						{
 							StudentID += 1;
 							state = 11;
@@ -405,25 +419,35 @@ void ButtonMatrixUpdate()
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					case 11: // 62340500060
-						if(ButtonMatrixState == (0b1 << 10^15) && StudentID == 11) // ok button
+						if(ButtonMatrixState == (0b1000000000000000) && StudentID == 11) // ok button
 						{
+							StudentID += 1;
 							HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 						}
 						else
 						{
 							state = 0;
+							CheckStudentID = +1;
 						}
 						break;
 					default:
 						break;
 				}
+				if(ButtonMatrixState == 0b1000)
+				{
+					CheckStudentID = 0;
+					StudentID = 0;
+					state = 0;
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+				}
 			}
 			else
 			{
-				StudentID &= ~((uint16_t)0x1 << (i + ButtonMatrixRow * 4));
+				ButtonMatrixState &= ~((uint16_t)0x1 << (i + ButtonMatrixRow * 4));
 			}
 		}
 		uint8_t NowOutputPin = ButtonMatrixRow + 4;
