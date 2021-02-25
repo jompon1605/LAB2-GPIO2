@@ -670,9 +670,9 @@ static void MX_GPIO_Init(void)
  80006a0:	687b      	ldr	r3, [r7, #4]
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
  80006a2:	2200      	movs	r2, #0
- 80006a4:	f44f 71b0 	mov.w	r1, #352	; 0x160
+ 80006a4:	f44f 7190 	mov.w	r1, #288	; 0x120
  80006a8:	483c      	ldr	r0, [pc, #240]	; (800079c <MX_GPIO_Init+0x180>)
  80006aa:	f000 fe35 	bl	8001318 <HAL_GPIO_WritePin>
 
@@ -713,9 +713,9 @@ static void MX_GPIO_Init(void)
  80006e2:	482f      	ldr	r0, [pc, #188]	; (80007a0 <MX_GPIO_Init+0x184>)
  80006e4:	f000 fc7e 	bl	8000fe4 <HAL_GPIO_Init>
 
-  /*Configure GPIO pins : LD2_Pin PA6 PA8 */
-  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_6|GPIO_PIN_8;
- 80006e8:	f44f 73b0 	mov.w	r3, #352	; 0x160
+  /*Configure GPIO pins : LD2_Pin PA8 */
+  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_8;
+ 80006e8:	f44f 7390 	mov.w	r3, #288	; 0x120
  80006ec:	617b      	str	r3, [r7, #20]
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
  80006ee:	2301      	movs	r3, #1
@@ -1330,9 +1330,9 @@ void ButtonMatrixUpdate()
  8000a78:	3301      	adds	r3, #1
  8000a7a:	4a3a      	ldr	r2, [pc, #232]	; (8000b64 <ButtonMatrixUpdate+0x3b8>)
  8000a7c:	6013      	str	r3, [r2, #0]
-							HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
- 8000a7e:	2200      	movs	r2, #0
- 8000a80:	2140      	movs	r1, #64	; 0x40
+							HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+ 8000a7e:	2201      	movs	r2, #1
+ 8000a80:	2120      	movs	r1, #32
  8000a82:	4839      	ldr	r0, [pc, #228]	; (8000b68 <ButtonMatrixUpdate+0x3bc>)
  8000a84:	f000 fc48 	bl	8001318 <HAL_GPIO_WritePin>
 						else
@@ -1374,9 +1374,9 @@ void ButtonMatrixUpdate()
  8000aae:	4b2a      	ldr	r3, [pc, #168]	; (8000b58 <ButtonMatrixUpdate+0x3ac>)
  8000ab0:	2200      	movs	r2, #0
  8000ab2:	801a      	strh	r2, [r3, #0]
-					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
- 8000ab4:	2201      	movs	r2, #1
- 8000ab6:	2140      	movs	r1, #64	; 0x40
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+ 8000ab4:	2200      	movs	r2, #0
+ 8000ab6:	2120      	movs	r1, #32
  8000ab8:	482b      	ldr	r0, [pc, #172]	; (8000b68 <ButtonMatrixUpdate+0x3bc>)
  8000aba:	f000 fc2d 	bl	8001318 <HAL_GPIO_WritePin>
  8000abe:	e012      	b.n	8000ae6 <ButtonMatrixUpdate+0x33a>
